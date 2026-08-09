@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import CampusMapSVG from "@/components/CampusMapSVG";
 import RoomCard from "@/components/RoomCard";
+import IoTActivityDrawer from "@/components/IoTActivityDrawer";
 import { api } from "@/lib/api";
 import { connectWebSocket } from "@/lib/websocket";
 import { MapPin, Building2, DoorOpen, Layers, Filter } from "lucide-react";
@@ -62,15 +63,15 @@ export default function CampusMapPage() {
   });
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn pb-12">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <MapPin className="w-8 h-8 text-blue-500" />
-          Interactive Virtual Campus Map
+        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+          <MapPin className="w-9 h-9 text-blue-500" />
+          Interactive Virtual Campus Map Blueprint
         </h1>
         <p className="text-sm text-gray-400 mt-1">
-          Explore campus buildings, inspect floor plans, observe live crowd density, and simulate occupancy changes.
+          Explore campus buildings, inspect floor plans, observe live crowd density heatmaps, and simulate IoT occupancy.
         </p>
       </div>
 
@@ -88,40 +89,40 @@ export default function CampusMapPage() {
         {/* Selected Building Details & Floor Rooms */}
         <div className="lg:col-span-5 space-y-6">
           {selectedBuilding ? (
-            <div className="glass-panel rounded-3xl p-6 border border-gray-800 space-y-5">
+            <div className="glass-panel rounded-3xl p-6 border border-blue-500/20 shadow-2xl space-y-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md">
                     {selectedBuilding.category}
                   </span>
-                  <h2 className="text-2xl font-extrabold text-white mt-1.5">{selectedBuilding.name}</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">Building Code: {selectedBuilding.code}</p>
+                  <h2 className="text-2xl font-black text-white mt-1.5">{selectedBuilding.name}</h2>
+                  <p className="text-xs text-gray-400 mt-0.5 font-mono-code">Building Code: {selectedBuilding.code}</p>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-black text-blue-400">{selectedBuilding.occupancy_pct}%</span>
-                  <span className="block text-[10px] uppercase text-gray-400">Current Load</span>
+                  <span className="block text-[10px] uppercase font-bold text-gray-400">Current Load</span>
                 </div>
               </div>
 
               {/* Stats pill */}
-              <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-900/80 border border-gray-800 text-center">
+              <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-950/80 border border-gray-800 text-center">
                 <div>
-                  <span className="text-xs text-gray-400 block">Rooms</span>
-                  <span className="text-sm font-bold text-white">{selectedBuilding.room_count}</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Rooms</span>
+                  <span className="text-base font-black text-white">{selectedBuilding.room_count}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block">Occupied</span>
-                  <span className="text-sm font-bold text-blue-400">{selectedBuilding.current_occupancy}</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Occupied</span>
+                  <span className="text-base font-black text-blue-400">{selectedBuilding.current_occupancy}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block">Capacity</span>
-                  <span className="text-sm font-bold text-white">{selectedBuilding.total_capacity}</span>
+                  <span className="text-xs text-gray-400 block font-semibold">Capacity</span>
+                  <span className="text-base font-black text-white">{selectedBuilding.total_capacity}</span>
                 </div>
               </div>
 
               {/* Floor Switcher */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-300 uppercase flex items-center gap-1.5">
+                <label className="text-xs font-bold text-gray-300 uppercase flex items-center gap-1.5">
                   <Layers className="w-4 h-4 text-indigo-400" /> Filter Floor:
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -130,7 +131,7 @@ export default function CampusMapPage() {
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       selectedFloor === "all"
                         ? "bg-blue-600 text-white border-blue-500 shadow-md"
-                        : "bg-slate-900 text-gray-400 border-gray-800 hover:border-gray-700"
+                        : "bg-slate-950 text-gray-400 border-gray-800 hover:border-gray-700"
                     }`}
                   >
                     All Floors
@@ -142,7 +143,7 @@ export default function CampusMapPage() {
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                         selectedFloor === flr
                           ? "bg-blue-600 text-white border-blue-500 shadow-md"
-                          : "bg-slate-900 text-gray-400 border-gray-800 hover:border-gray-700"
+                          : "bg-slate-950 text-gray-400 border-gray-800 hover:border-gray-700"
                       }`}
                     >
                       Floor {flr}
@@ -172,12 +173,16 @@ export default function CampusMapPage() {
               </div>
             </div>
           ) : (
-            <div className="glass-panel rounded-3xl p-8 border border-gray-800 text-center text-gray-400">
-              Select a building from the map to inspect rooms.
+            <div className="glass-panel rounded-3xl p-8 border border-gray-800 text-center text-gray-400 shadow-xl">
+              Select a building from the map blueprint to inspect rooms.
             </div>
           )}
         </div>
       </div>
+
+      {/* Floating IoT Activity Drawer */}
+      <IoTActivityDrawer />
     </div>
   );
 }
+

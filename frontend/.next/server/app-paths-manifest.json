@@ -1,0 +1,7 @@
+{
+  "/map/page": "app/map/page.js",
+  "/page": "app/page.js",
+  "/rooms/page": "app/rooms/page.js",
+  "/maintenance/page": "app/maintenance/page.js",
+  "/events/page": "app/events/page.js"
+}
