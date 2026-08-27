@@ -8,6 +8,7 @@ import MaintenanceModal from "@/components/MaintenanceModal";
 import IoTActivityDrawer from "@/components/IoTActivityDrawer";
 import { api } from "@/lib/api";
 import { connectWebSocket } from "@/lib/websocket";
+import { useTheme } from "@/components/ThemeProvider";
 import {
   DoorOpen,
   Users,
@@ -20,6 +21,8 @@ import {
   ShieldAlert,
   Zap,
   Activity,
+  Radio,
+  RotateCcw,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -29,6 +32,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const { playHover, playClick, playPulse } = useTheme();
 
   const loadDashboardData = async () => {
     try {
@@ -60,13 +66,35 @@ export default function Dashboard() {
     return () => cleanupWS();
   }, []);
 
+  const handleSimulatePulse = async () => {
+    playPulse();
+    setIsSimulating(true);
+    try {
+      // Fetch rooms and bump random room occupancy to simulate real IoT telemetry shift
+      const roomsRes = await api.getRooms();
+      if (roomsRes && roomsRes.items && roomsRes.items.length > 0) {
+        const randomRoom =
+          roomsRes.items[Math.floor(Math.random() * roomsRes.items.length)];
+        const newOcc = Math.floor(Math.random() * randomRoom.capacity);
+        await api.updateRoomOccupancy(randomRoom.id, newOcc);
+        await loadDashboardData();
+      }
+    } catch (e) {
+      console.error("Simulation failed", e);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   if (loading || !analytics) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center animate-spin">
-          <Zap className="w-7 h-7 text-blue-400" />
+        <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center animate-spin">
+          <Zap className="w-7 h-7 text-accent" />
         </div>
-        <p className="text-sm font-bold text-gray-400 tracking-wide">Syncing Digital Twin Campus IoT Telemetry...</p>
+        <p className="text-xs font-black text-gray-400 tracking-widest uppercase animate-pulse">
+          Syncing Virtual Twin IoT Telemetry...
+        </p>
       </div>
     );
   }
@@ -76,39 +104,57 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-fadeIn pb-12">
       {/* Header Hero Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl glass-panel bg-gradient-to-r from-blue-950/60 via-indigo-950/40 to-slate-950/80 border border-blue-500/30 relative overflow-hidden shadow-2xl">
-        {/* Glow backdrop circles */}
-        <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -left-10 -top-10 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
+      <div className="p-6 sm:p-8 rounded-3xl glass-panel bg-slate-950/80 border border-white/10 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-inner">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" /> Virtual Twin Platform v2.0
+              <span className="px-3 py-1 rounded-full bg-white/10 border border-accent/40 text-accent text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-inner">
+                <Sparkles className="w-3.5 h-3.5" /> Virtual Twin Platform v2.0
               </span>
-              <span className="text-xs text-gray-400 hidden sm:inline">• Live IoT Telemetry & ML Active</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">
+                • Live IoT Telemetry & ML Active
+              </span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
               Campus Operations & Digital Twin
             </h1>
             <p className="text-sm text-gray-300 max-w-2xl mt-2 leading-relaxed font-medium">
-              Monitor real-time room availability, crowd density indices, campus events, maintenance tickets, and AI room demand predictions.
+              Monitor real-time room availability, crowd density indices, campus
+              events, maintenance tickets, and AI room demand forecasts.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* Interactive Simulation Pulse Trigger */}
             <button
-              onClick={() => setIsMaintenanceOpen(true)}
+              onClick={handleSimulatePulse}
+              onMouseEnter={playHover}
+              disabled={isSimulating}
+              className="px-4 py-3 rounded-2xl bg-white/10 border border-accent/40 hover:bg-white/15 text-white font-bold text-xs transition-all flex items-center gap-2 shadow-lg"
+            >
+              <Radio
+                className={`w-4 h-4 text-accent ${isSimulating ? "animate-spin" : "animate-pulse"}`}
+              />
+              {isSimulating ? "Simulating IoT..." : "Simulate IoT Pulse"}
+            </button>
+
+            <button
+              onClick={() => {
+                playClick();
+                setIsMaintenanceOpen(true);
+              }}
+              onMouseEnter={playHover}
               className="px-4 py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-300 font-bold text-xs transition-all flex items-center gap-2 shadow-lg"
             >
               <Wrench className="w-4 h-4" /> Report Issue
             </button>
             <Link
               href="/map"
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-xl shadow-blue-500/25 transition-all flex items-center gap-2"
+              onMouseEnter={playHover}
+              onClick={playClick}
+              className="px-5 py-3 rounded-2xl glass-button font-extrabold text-xs shadow-xl transition-all flex items-center gap-2"
             >
-              <MapPin className="w-4 h-4" /> Launch Interactive Blueprint
+              <MapPin className="w-4 h-4 text-accent" /> Launch Blueprint
             </Link>
           </div>
         </div>
@@ -159,29 +205,38 @@ export default function Dashboard() {
         {/* Side Panel: Selected Building & Crowd Classification */}
         <div className="space-y-6">
           {/* Selected Building Details Card */}
-          <div className="glass-panel p-6 rounded-3xl border border-blue-500/20 shadow-xl space-y-4">
-            <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-blue-400" />
-              {selectedBuilding ? selectedBuilding.name : "Select a Building Node"}
+          <div className="glass-panel p-6 rounded-3xl border border-white/10 shadow-xl space-y-4">
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-accent" />
+              {selectedBuilding
+                ? selectedBuilding.name
+                : "Select a Building Node"}
             </h3>
             <p className="text-xs text-gray-400">
-              {selectedBuilding ? `Category: ${selectedBuilding.category}` : "Click any node on the blueprint to inspect real-time room stats."}
+              {selectedBuilding
+                ? `Category: ${selectedBuilding.category}`
+                : "Click any node on the blueprint to inspect real-time room stats."}
             </p>
 
             {selectedBuilding ? (
               <div className="space-y-4 pt-1">
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-gray-800 space-y-2">
-                  <div className="flex justify-between text-xs font-semibold">
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
                     <span className="text-gray-400">Total Capacity:</span>
-                    <span className="text-white font-bold">{selectedBuilding.total_capacity} seats</span>
+                    <span className="text-white">
+                      {selectedBuilding.total_capacity} seats
+                    </span>
                   </div>
-                  <div className="flex justify-between text-xs font-semibold">
+                  <div className="flex justify-between text-xs font-bold">
                     <span className="text-gray-400">Current Occupancy:</span>
-                    <span className="text-blue-400 font-bold">{selectedBuilding.current_occupancy} ({selectedBuilding.occupancy_pct}%)</span>
+                    <span className="text-accent font-mono-code">
+                      {selectedBuilding.current_occupancy} (
+                      {selectedBuilding.occupancy_pct}%)
+                    </span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-white/10">
                     <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                      className="h-full bg-accent rounded-full transition-all duration-500"
                       style={{ width: `${selectedBuilding.occupancy_pct}%` }}
                     ></div>
                   </div>
@@ -189,41 +244,62 @@ export default function Dashboard() {
 
                 <Link
                   href={`/rooms?building_id=${selectedBuilding.id}`}
-                  className="w-full py-3 rounded-2xl bg-blue-600/20 border border-blue-500/40 text-blue-300 font-bold text-xs hover:bg-blue-600/30 transition-all flex items-center justify-center gap-2 shadow-inner"
+                  onMouseEnter={playHover}
+                  onClick={playClick}
+                  className="w-full py-3 rounded-2xl bg-white/10 border border-accent/40 text-white font-bold text-xs hover:bg-white/15 transition-all flex items-center justify-center gap-2 shadow-inner"
                 >
-                  Explore {selectedBuilding.name} Rooms <ArrowRight className="w-4 h-4" />
+                  Explore {selectedBuilding.name} Rooms{" "}
+                  <ArrowRight className="w-4 h-4 text-accent" />
                 </Link>
               </div>
             ) : (
-              <div className="p-6 rounded-2xl bg-slate-950/40 border border-dashed border-gray-800 text-center">
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Click Academic Block A, Library, Innovation Labs, or Auditorium from the map to inspect capacity.
+              <div className="p-6 rounded-2xl bg-slate-950/40 border border-dashed border-white/10 text-center">
+                <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                  Click Academic Block A, Library, Innovation Labs, or
+                  Auditorium from the map to inspect capacity.
                 </p>
               </div>
             )}
           </div>
 
           {/* Crowd Distribution Breakdown */}
-          <div className="glass-panel p-6 rounded-3xl border border-gray-800 space-y-4 shadow-xl">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" /> Live Room Crowd Classification
+          <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
+            <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-400" /> Live Room Crowd
+              Classification
             </h3>
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between items-center p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                <span className="text-emerald-400 font-bold">Low Crowd (&lt;40%)</span>
-                <span className="text-white font-black">{analytics.crowd_counts.Low} Rooms</span>
+                <span className="text-emerald-400 font-bold">
+                  Low Crowd (&lt;40%)
+                </span>
+                <span className="text-white font-mono-code font-bold">
+                  {analytics.crowd_counts.Low} Rooms
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                <span className="text-amber-400 font-bold">Medium Crowd (40-70%)</span>
-                <span className="text-white font-black">{analytics.crowd_counts.Medium} Rooms</span>
+                <span className="text-amber-400 font-bold">
+                  Medium Crowd (40-70%)
+                </span>
+                <span className="text-white font-mono-code font-bold">
+                  {analytics.crowd_counts.Medium} Rooms
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20">
-                <span className="text-orange-400 font-bold">High Crowd (70-90%)</span>
-                <span className="text-white font-black">{analytics.crowd_counts.High} Rooms</span>
+                <span className="text-orange-400 font-bold">
+                  High Crowd (70-90%)
+                </span>
+                <span className="text-white font-mono-code font-bold">
+                  {analytics.crowd_counts.High} Rooms
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                <span className="text-rose-400 font-bold">Very High Crowd (&gt;90%)</span>
-                <span className="text-white font-black">{analytics.crowd_counts["Very High"]} Rooms</span>
+                <span className="text-rose-400 font-bold">
+                  Very High Crowd (&gt;90%)
+                </span>
+                <span className="text-white font-mono-code font-bold">
+                  {analytics.crowd_counts["Very High"]} Rooms
+                </span>
               </div>
             </div>
           </div>
@@ -233,29 +309,45 @@ export default function Dashboard() {
       {/* Events & Maintenance Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Events Panel */}
-        <div className="glass-panel p-6 rounded-3xl border border-gray-800 space-y-4 shadow-xl">
+        <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-indigo-400" /> Upcoming Campus Events
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-accent" /> Upcoming Campus
+              Events
             </h3>
-            <Link href="/events" className="text-xs text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1">
+            <Link
+              href="/events"
+              onMouseEnter={playHover}
+              onClick={playClick}
+              className="text-xs text-accent hover:underline font-bold flex items-center gap-1"
+            >
               View All <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="space-y-3">
             {events.map((e) => (
-              <div key={e.id} className="p-4 rounded-2xl bg-slate-950/60 border border-gray-800/80 flex items-start justify-between">
+              <div
+                key={e.id}
+                className="p-4 rounded-2xl bg-slate-950/60 border border-white/10 flex items-start justify-between"
+              >
                 <div>
-                  <span className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-md">
+                  <span className="text-[10px] font-extrabold text-accent uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-md">
                     {e.category}
                   </span>
-                  <h4 className="text-sm font-bold text-white mt-1.5">{e.title}</h4>
-                  <p className="text-xs text-gray-400 mt-0.5">📍 {e.location_name}</p>
+                  <h4 className="text-sm font-bold text-white mt-1.5">
+                    {e.title}
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    📍 {e.location_name}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-semibold text-gray-300">
-                    {new Date(e.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <span className="text-xs font-bold text-gray-300 font-mono-code">
+                    {new Date(e.start_time).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
               </div>
@@ -264,33 +356,50 @@ export default function Dashboard() {
         </div>
 
         {/* Maintenance Panel */}
-        <div className="glass-panel p-6 rounded-3xl border border-gray-800 space-y-4 shadow-xl">
+        <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-amber-400" /> Facilities & Maintenance
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-amber-400" /> Facilities &
+              Maintenance
             </h3>
-            <Link href="/maintenance" className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
+            <Link
+              href="/maintenance"
+              onMouseEnter={playHover}
+              onClick={playClick}
+              className="text-xs text-amber-400 hover:underline font-bold flex items-center gap-1"
+            >
               Manage Board <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="space-y-3">
             {maintenanceReports.map((m) => (
-              <div key={m.id} className="p-4 rounded-2xl bg-slate-950/60 border border-gray-800/80 flex items-center justify-between">
+              <div
+                key={m.id}
+                className="p-4 rounded-2xl bg-slate-950/60 border border-white/10 flex items-center justify-between"
+              >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
-                      m.priority === "High" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" :
-                      m.priority === "Medium" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
-                      "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
+                        m.priority === "High"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          : m.priority === "Medium"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      }`}
+                    >
                       {m.priority} Priority
                     </span>
-                    <span className="text-xs text-gray-400">📍 {m.location}</span>
+                    <span className="text-xs text-gray-400">
+                      📍 {m.location}
+                    </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mt-1.5">{m.title}</h4>
+                  <h4 className="text-sm font-bold text-white mt-1.5">
+                    {m.title}
+                  </h4>
                 </div>
-                <span className="text-xs font-bold text-gray-300 bg-slate-900 border border-gray-800 px-3 py-1 rounded-xl">
+                <span className="text-xs font-bold text-gray-300 bg-slate-900 border border-white/10 px-3 py-1 rounded-xl">
                   {m.status}
                 </span>
               </div>
@@ -311,4 +420,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

@@ -1,7 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Building2, Layers, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, Sparkles, Navigation, Flame, ShieldAlert, CheckCircle2 } from "lucide-react";
+import {
+  Building2,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  AlertTriangle,
+  Sparkles,
+  Navigation,
+  Flame,
+  ShieldAlert,
+  CheckCircle2,
+} from "lucide-react";
+import { useTheme, THEMES } from "./ThemeProvider";
 
 interface BuildingData {
   id: number;
@@ -31,6 +44,9 @@ export default function CampusMapSVG({
   const [hoveredBuilding, setHoveredBuilding] = useState<BuildingData | null>(null);
   const [activeLayer, setActiveLayer] = useState<"all" | "heatmap" | "quiet" | "maintenance" | "routes">("all");
   const [zoomLevel, setZoomLevel] = useState(1);
+
+  const { theme, playHover, playClick } = useTheme();
+  const activeTheme = THEMES[theme] || THEMES.cyber;
 
   // Coordinates & node layouts for campus blueprint
   const buildingNodes = [
@@ -74,96 +90,97 @@ export default function CampusMapSVG({
   };
 
   const handleZoom = (delta: number) => {
-    setZoomLevel((prev) => Math.min(1.4, Math.max(0.8, prev + delta)));
+    playClick();
+    setZoomLevel((prev) => Math.min(1.5, Math.max(0.7, prev + delta)));
   };
 
-  // Base viewBox calculation for zoom
   const viewBoxWidth = 780 / zoomLevel;
   const viewBoxHeight = 780 / zoomLevel;
   const viewBoxX = (780 - viewBoxWidth) / 2;
   const viewBoxY = (780 - viewBoxHeight) / 2;
 
   return (
-    <div className="relative w-full glass-panel rounded-3xl p-5 border border-blue-500/20 shadow-2xl space-y-4">
+    <div className="relative w-full glass-panel rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4">
       {/* Top Map Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2.5">
-            <Building2 className="w-6 h-6 text-blue-400" />
+          <h2 className="text-xl font-black text-white flex items-center gap-2.5">
+            <Building2 className="w-6 h-6 text-accent" />
             Virtual Blueprint & IoT Sensor Map
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Interactive IoT spatial node map with live crowd heatmaps and route tracing.
+          <p className="text-xs text-gray-400 mt-0.5 font-medium">
+            Interactive spatial layout with real-time IoT crowd telemetry and node routing.
           </p>
         </div>
 
         {/* Interactive Viewport & Layer Switcher */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Layer Selector */}
-          <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-gray-800 text-xs">
-            <button
-              onClick={() => setActiveLayer("all")}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-                activeLayer === "all" ? "bg-blue-600 text-white shadow-md" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              All Nodes
-            </button>
-            <button
-              onClick={() => setActiveLayer("heatmap")}
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all ${
-                activeLayer === "heatmap" ? "bg-amber-600 text-white shadow-md" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5" /> Heatmap
-            </button>
-            <button
-              onClick={() => setActiveLayer("quiet")}
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all ${
-                activeLayer === "quiet" ? "bg-emerald-600 text-white shadow-md" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Quiet Zones
-            </button>
-            <button
-              onClick={() => setActiveLayer("routes")}
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all ${
-                activeLayer === "routes" ? "bg-indigo-600 text-white shadow-md" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Navigation className="w-3.5 h-3.5" /> Routes
-            </button>
+          <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10 text-xs">
+            {[
+              { id: "all", label: "All Nodes", icon: Layers },
+              { id: "heatmap", label: "Heatmap", icon: Flame },
+              { id: "quiet", label: "Quiet", icon: CheckCircle2 },
+              { id: "routes", label: "Routes", icon: Navigation },
+            ].map((layer) => {
+              const Icon = layer.icon;
+              const isActive = activeLayer === layer.id;
+              return (
+                <button
+                  key={layer.id}
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playClick();
+                    setActiveLayer(layer.id as any);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all ${
+                    isActive
+                      ? "bg-white/10 text-white border border-accent/40 shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-accent" : "text-gray-400"}`} />
+                  <span>{layer.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Zoom Buttons */}
-          <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-gray-800">
+          <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10">
             <button
               onClick={() => handleZoom(0.15)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+              onMouseEnter={playHover}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               title="Zoom In"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-4 h-4 text-accent" />
             </button>
             <button
               onClick={() => handleZoom(-0.15)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+              onMouseEnter={playHover}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               title="Zoom Out"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-4 h-4 text-accent" />
             </button>
             <button
-              onClick={() => setZoomLevel(1)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+              onClick={() => {
+                playClick();
+                setZoomLevel(1);
+              }}
+              onMouseEnter={playHover}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
               title="Reset View"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4 text-accent" />
             </button>
           </div>
         </div>
       </div>
 
       {/* SVG Map Display Box */}
-      <div className="relative w-full overflow-hidden rounded-2xl border border-gray-800/80 bg-slate-950/80 shadow-inner">
+      <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/90 shadow-inner">
         <svg
           viewBox={`${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`}
           className="w-full h-auto max-h-[640px] select-none transition-all duration-300 ease-out cursor-crosshair"
@@ -172,183 +189,183 @@ export default function CampusMapSVG({
             {/* Cyber Pattern Grid */}
             <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-              <circle cx="40" cy="40" r="1.5" fill="rgba(59, 130, 246, 0.2)" />
+              <circle cx="40" cy="40" r="1.5" fill={activeTheme.accentHex} opacity="0.3" />
             </pattern>
-            {/* Glowing Gradient Filters */}
+            {/* Radial Gradient Filter */}
             <radialGradient id="centralGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(59, 130, 246, 0.2)" />
-              <stop offset="100%" stopColor="rgba(15, 23, 42, 0)" />
+              <stop offset="0%" stopColor={activeTheme.accentHex} stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
             </radialGradient>
           </defs>
 
           {/* Background Grid */}
           <rect width="100%" height="100%" fill="url(#gridPattern)" />
 
-          {/* Central Courtyard & Fountain Hub */}
-          <circle cx="390" cy="340" r="45" fill="url(#centralGlow)" stroke="rgba(59, 130, 246, 0.3)" strokeWidth="1.5" />
-          <circle cx="390" cy="340" r="20" fill="rgba(59, 130, 246, 0.15)" stroke="#3B82F6" strokeWidth="2" />
-          <text x="390" y="344" textAnchor="middle" fill="#60A5FA" fontSize="10" fontWeight="bold">
-            Central Plaza Hub
+          {/* Central Hub */}
+          <circle cx="390" cy="340" r="45" fill="url(#centralGlow)" stroke={activeTheme.accentHex} strokeWidth="1.5" strokeOpacity="0.5" />
+          <circle cx="390" cy="340" r="20" fill={activeTheme.accentHex} fillOpacity="0.15" stroke={activeTheme.accentHex} strokeWidth="2" />
+          <text x="390" y="344" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
+            Central Plaza
           </text>
 
-          {/* Pedestrian Pathways & Routes */}
-          <g stroke="rgba(59, 130, 246, 0.2)" strokeWidth="6" strokeDasharray="8 6" fill="none">
+          {/* Pedestrian Routes */}
+          <g stroke={activeTheme.accentHex} strokeOpacity="0.2" strokeWidth="5" strokeDasharray="8 6" fill="none">
             <path d="M 225 140 L 555 140" />
             <path d="M 175 340 L 610 340" />
             <path d="M 220 535 L 565 535" />
             <path d="M 225 140 L 175 340 L 220 535" />
             <path d="M 555 140 L 610 340 L 565 535" />
-            <path d="M 390 340 L 395 685" />
           </g>
 
-          {/* Active Highlighted Route path if routes layer or props enabled */}
-          {(activeLayer === "routes" || highlightRouteCode) && (
-            <g stroke="#3B82F6" strokeWidth="6" strokeDasharray="10 8" fill="none" className="animate-dash-flow">
-              <path d="M 225 140 L 390 340 L 610 340" stroke="#60A5FA" />
-            </g>
-          )}
-
-          {/* Render Buildings Nodes */}
+          {/* Render Building Blueprint Nodes */}
           {buildingNodes.map((node) => {
             const info = getBuildingInfo(node.code);
             const isSelected = selectedBuildingId === info.id;
-            const glowColor = getGlowColor(info.occupancy_pct);
+            const isHovered = hoveredBuilding?.code === node.code;
+            const statusColor = getGlowColor(info.occupancy_pct);
 
-            // Layer Filtering logic
-            let isDimmed = false;
-            if (activeLayer === "heatmap" && info.occupancy_pct < 70) isDimmed = true;
-            if (activeLayer === "quiet" && info.occupancy_pct >= 40) isDimmed = true;
+            const isRouteOrigin = highlightRouteCode?.originCode === node.code;
+            const isRouteDest = highlightRouteCode?.destCode === node.code;
+            const isHighlightedRoute = isRouteOrigin || isRouteDest;
+
+            // Filter visibility checks
+            if (activeLayer === "quiet" && info.occupancy_pct > 40) return null;
+            if (activeLayer === "heatmap" && info.occupancy_pct < 40) return null;
 
             return (
               <g
                 key={node.code}
-                className={`cursor-pointer transition-all duration-300 ${isDimmed ? "opacity-30" : "opacity-100"}`}
-                onClick={() => onSelectBuilding && onSelectBuilding(info)}
-                onMouseEnter={() => setHoveredBuilding(info)}
+                onClick={() => {
+                  playClick();
+                  if (onSelectBuilding) onSelectBuilding(info);
+                }}
+                onMouseEnter={() => {
+                  playHover();
+                  setHoveredBuilding(info);
+                }}
                 onMouseLeave={() => setHoveredBuilding(null)}
+                className="cursor-pointer transition-all duration-300"
               >
-                {/* Concentric IoT Radar Pulsing Ring */}
-                <circle
-                  cx={node.x + node.width / 2}
-                  cy={node.y + node.height / 2}
-                  r="70"
-                  fill="none"
-                  stroke={glowColor}
-                  strokeWidth="1.5"
-                  opacity="0.25"
-                  className="animate-pulse"
-                />
-
-                {/* Outer Glow Rectangle */}
+                {/* Node Glow Border */}
                 <rect
-                  x={node.x - 5}
-                  y={node.y - 5}
-                  width={node.width + 10}
-                  height={node.height + 10}
-                  rx="22"
-                  fill={glowColor}
-                  opacity={isSelected ? 0.45 : activeLayer === "heatmap" ? 0.35 : 0.12}
+                  x={node.x - 4}
+                  y={node.y - 4}
+                  width={node.width + 8}
+                  height={node.height + 8}
+                  rx="20"
+                  fill="none"
+                  stroke={isSelected || isHighlightedRoute ? activeTheme.accentHex : isHovered ? statusColor : "none"}
+                  strokeWidth={isSelected || isHighlightedRoute ? "3" : "2"}
+                  opacity={isHovered || isSelected || isHighlightedRoute ? "0.9" : "0"}
                   className="transition-all duration-300"
                 />
 
-                {/* Main Card Container */}
+                {/* Main Node Box */}
                 <rect
                   x={node.x}
                   y={node.y}
                   width={node.width}
                   height={node.height}
-                  rx="18"
-                  fill="#0F172A"
-                  stroke={isSelected ? "#3B82F6" : glowColor}
-                  strokeWidth={isSelected ? "3" : "1.8"}
-                  className="filter drop-shadow-xl hover:fill-slate-900 transition-colors"
+                  rx="16"
+                  fill={isHovered ? "rgba(30, 41, 59, 0.95)" : "rgba(15, 23, 42, 0.85)"}
+                  stroke={isSelected ? activeTheme.accentHex : "rgba(255, 255, 255, 0.12)"}
+                  strokeWidth={isSelected ? "2" : "1"}
+                  className="transition-colors duration-200"
                 />
 
-                {/* Header Badge */}
+                {/* Status Indicator Pill */}
                 <rect
                   x={node.x + 14}
-                  y={node.y + 12}
-                  width={58}
-                  height={22}
-                  rx="8"
-                  fill={glowColor}
-                  opacity="0.2"
+                  y={node.y + 14}
+                  width="12"
+                  height="12"
+                  rx="6"
+                  fill={statusColor}
                 />
-                <text
-                  x={node.x + 43}
-                  y={node.y + 27}
-                  textAnchor="middle"
-                  fill={glowColor}
-                  fontSize="11"
-                  fontWeight="bold"
-                >
-                  {node.code}
-                </text>
 
-                {/* Maintenance Alert Icon on Map if open maintenance */}
-                {info.open_maintenance && info.open_maintenance > 0 && (
-                  <g transform={`translate(${node.x + node.width - 32}, ${node.y + 12})`}>
-                    <circle cx="10" cy="10" r="10" fill="#EF4444" opacity="0.9" />
-                    <text x="10" y="14" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">!</text>
-                  </g>
-                )}
-
-                {/* Building Name */}
-                <text
-                  x={node.x + 16}
-                  y={node.y + 56}
-                  fill="#FFFFFF"
-                  fontSize="13"
-                  fontWeight="800"
-                >
+                {/* Building Code & Label */}
+                <text x={node.x + 34} y={node.y + 25} fill="#F3F4F6" fontSize="13" fontWeight="800">
                   {node.label}
                 </text>
-
-                {/* Occupancy Progress Bar */}
-                <rect
-                  x={node.x + 16}
-                  y={node.y + 68}
-                  width={node.width - 32}
-                  height="7"
-                  rx="3.5"
-                  fill="#1E293B"
-                />
-                <rect
-                  x={node.x + 16}
-                  y={node.y + 68}
-                  width={Math.max(4, ((node.width - 32) * Math.min(100, info.occupancy_pct)) / 100)}
-                  height="7"
-                  rx="3.5"
-                  fill={glowColor}
-                />
-
-                {/* Metrics */}
-                <text x={node.x + 16} y={node.y + 94} fill="#94A3B8" fontSize="11" fontWeight="500">
-                  Occ: {info.current_occupancy}/{info.total_capacity} ({info.occupancy_pct}%)
+                <text x={node.x + 34} y={node.y + 40} fill="#94A3B8" fontSize="10" fontWeight="600" className="font-mono-code">
+                  ID: {node.code}
                 </text>
 
-                <text x={node.x + 16} y={node.y + 114} fill="#60A5FA" fontSize="11" fontWeight="600">
-                  {info.room_count} Rooms • {getCrowdLevelStr(info.occupancy_pct)}
+                {/* Capacity & Occupancy Meter */}
+                <text x={node.x + 14} y={node.y + 68} fill="#CBD5E1" fontSize="11" fontWeight="700">
+                  Occupancy: {info.current_occupancy} / {info.total_capacity}
                 </text>
+                
+                {/* Progress bar background */}
+                <rect
+                  x={node.x + 14}
+                  y={node.y + 78}
+                  width={node.width - 28}
+                  height="7"
+                  rx="3.5"
+                  fill="rgba(51, 65, 85, 0.6)"
+                />
+                
+                {/* Progress bar fill */}
+                <rect
+                  x={node.x + 14}
+                  y={node.y + 78}
+                  width={((node.width - 28) * Math.min(info.occupancy_pct, 100)) / 100}
+                  height="7"
+                  rx="3.5"
+                  fill={statusColor}
+                />
+
+                {/* Footer status badges */}
+                <text x={node.x + 14} y={node.y + 104} fill={statusColor} fontSize="10" fontWeight="800">
+                  ● {getCrowdLevelStr(info.occupancy_pct)} ({Math.round(info.occupancy_pct)}%)
+                </text>
+
+                {/* Maintenance Warning Badge if applicable */}
+                {info.open_maintenance && info.open_maintenance > 0 ? (
+                  <g transform={`translate(${node.x + node.width - 32}, ${node.y + node.height - 30})`}>
+                    <circle cx="10" cy="10" r="10" fill="#EF4444" fillOpacity="0.2" stroke="#EF4444" strokeWidth="1.5" />
+                    <text x="10" y="14" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="900">
+                      !
+                    </text>
+                  </g>
+                ) : null}
+
+                {/* Route Destination Tag */}
+                {isRouteOrigin && (
+                  <text x={node.x + node.width - 50} y={node.y + 25} fill="#10B981" fontSize="10" fontWeight="900">
+                    [START]
+                  </text>
+                )}
+                {isRouteDest && (
+                  <text x={node.x + node.width - 45} y={node.y + 25} fill="#F59E0B" fontSize="10" fontWeight="900">
+                    [DEST]
+                  </text>
+                )}
               </g>
             );
           })}
         </svg>
       </div>
 
-      {/* Footer Legend Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-900/90 px-4 py-2.5 rounded-2xl border border-gray-800">
-        <div className="flex items-center space-x-4">
-          <span className="font-semibold text-gray-300">Live Crowd Index:</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> &lt;40% (Low)</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 40-70% (Medium)</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> 70-90% (High)</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> &gt;90% (Very High)</span>
+      {/* Hover Info Tooltip Banner */}
+      {hoveredBuilding && (
+        <div className="p-3 rounded-2xl glass-panel bg-slate-900/90 border border-white/15 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center space-x-3">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: getGlowColor(hoveredBuilding.occupancy_pct) }}
+            ></div>
+            <div>
+              <span className="text-xs font-bold text-white">{hoveredBuilding.name}</span>
+              <span className="text-[11px] text-gray-400 ml-2">
+                ({hoveredBuilding.current_occupancy} occupants, {hoveredBuilding.room_count} active rooms)
+              </span>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-accent">Click node to inspect rooms →</span>
         </div>
-        <div className="text-[11px] text-gray-400 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-blue-400" /> Click any building to view rooms
-        </div>
-      </div>
+      )}
     </div>
   );
 }

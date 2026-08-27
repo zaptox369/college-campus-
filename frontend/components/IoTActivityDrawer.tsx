@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { connectWebSocket } from "@/lib/websocket";
 import { Activity, ChevronDown, ChevronUp, Zap, Radio, Bell } from "lucide-react";
+import { useTheme } from "./ThemeProvider";
 
 interface ActivityLog {
   id: string;
@@ -17,6 +18,8 @@ export default function IoTActivityDrawer() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasNewAlert, setHasNewAlert] = useState(false);
 
+  const { playHover, playClick, playPulse } = useTheme();
+
   useEffect(() => {
     // Initial sample system events
     setLogs([
@@ -25,7 +28,7 @@ export default function IoTActivityDrawer() {
         type: "SYSTEM_INIT",
         message: "IoT Sensor Gateway initialized across 7 building blocks",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+        badgeColor: "bg-white/10 text-white border-white/20",
       },
     ]);
 
@@ -54,6 +57,7 @@ export default function IoTActivityDrawer() {
       if (newLog) {
         setLogs((prev) => [newLog!, ...prev.slice(0, 15)]);
         setHasNewAlert(true);
+        playPulse();
       }
     });
 
@@ -61,59 +65,63 @@ export default function IoTActivityDrawer() {
   }, []);
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 max-w-sm w-full sm:w-80">
-      <div className="glass-panel rounded-2xl border border-blue-500/30 shadow-2xl overflow-hidden backdrop-blur-xl">
-        {/* Header Bar */}
+    <div className="fixed bottom-4 right-4 z-40 max-w-sm sm:max-w-md w-full animate-fadeIn">
+      <div className="glass-panel rounded-3xl border border-white/20 shadow-2xl overflow-hidden bg-slate-950/90">
+        {/* Drawer Header Toggle */}
         <button
           onClick={() => {
+            playClick();
             setIsExpanded(!isExpanded);
             setHasNewAlert(false);
           }}
-          className="w-full px-4 py-3 bg-slate-950/80 hover:bg-slate-900 flex items-center justify-between transition-colors border-b border-gray-800"
+          onMouseEnter={playHover}
+          className="w-full flex items-center justify-between p-3.5 px-4 bg-slate-950/80 border-b border-white/10 hover:bg-white/5 transition-colors"
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="text-xs font-bold text-white tracking-tight">IoT Live Stream Feed</span>
-            {logs.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-bold">
-                {logs.length}
+            <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-accent animate-pulse" /> IoT Telemetry Stream
+            </span>
+            {hasNewAlert && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-[10px] font-black text-slate-950 animate-bounce">
+                NEW
               </span>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            {hasNewAlert && !isExpanded && (
-              <span className="text-[10px] font-bold text-emerald-400 animate-pulse bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                New Telemetry
-              </span>
-            )}
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
-            )}
+          <div className="flex items-center space-x-2 text-gray-400">
+            <span className="text-[10px] font-mono-code font-bold text-accent">
+              {logs.length} events
+            </span>
+            {isExpanded ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronUp className="w-4 h-4 text-white" />}
           </div>
         </button>
 
-        {/* Collapsible Content */}
+        {/* Expanded Feed Content */}
         {isExpanded && (
-          <div className="p-3 max-h-64 overflow-y-auto space-y-2 bg-slate-900/60 text-xs">
+          <div className="max-h-72 overflow-y-auto p-3 space-y-2 bg-slate-950/60">
             {logs.length === 0 ? (
-              <p className="text-[11px] text-gray-400 text-center py-4">Listening for live IoT updates...</p>
+              <p className="text-xs text-gray-500 text-center py-4">Listening for live IoT updates...</p>
             ) : (
               logs.map((log) => (
-                <div key={log.id} className="p-2.5 rounded-xl bg-slate-950/70 border border-gray-800/80 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${log.badgeColor}`}>
-                      {log.type}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-mono-code">{log.timestamp}</span>
+                <div
+                  key={log.id}
+                  className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-start justify-between text-xs animate-fadeIn"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase ${log.badgeColor}`}>
+                        {log.type}
+                      </span>
+                    </div>
+                    <p className="text-gray-200 font-medium text-xs mt-1">{log.message}</p>
                   </div>
-                  <p className="text-[11px] text-gray-200 leading-tight">{log.message}</p>
+                  <span className="text-[10px] text-gray-400 font-mono-code shrink-0 ml-2">
+                    {log.timestamp}
+                  </span>
                 </div>
               ))
             )}

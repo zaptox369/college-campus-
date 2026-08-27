@@ -29,9 +29,16 @@ export const api = {
   getBuildingRooms: (id: number) => fetchAPI(`/buildings/${id}/rooms`),
 
   // Rooms
-  getRooms: (filters?: { building_id?: number; room_type?: string; floor?: number; status?: string; available_only?: boolean }) => {
+  getRooms: (filters?: {
+    building_id?: number;
+    room_type?: string;
+    floor?: number;
+    status?: string;
+    available_only?: boolean;
+  }) => {
     const params = new URLSearchParams();
-    if (filters?.building_id) params.append("building_id", filters.building_id.toString());
+    if (filters?.building_id)
+      params.append("building_id", filters.building_id.toString());
     if (filters?.room_type) params.append("room_type", filters.room_type);
     if (filters?.floor) params.append("floor", filters.floor.toString());
     if (filters?.status) params.append("status", filters.status);
@@ -40,7 +47,11 @@ export const api = {
     return fetchAPI(`/rooms${query}`);
   },
   getRoom: (id: number) => fetchAPI(`/rooms/${id}`),
-  updateRoomOccupancy: (id: number, current_occupancy: number, status?: string) =>
+  updateRoomOccupancy: (
+    id: number,
+    current_occupancy: number,
+    status?: string,
+  ) =>
     fetchAPI(`/rooms/${id}/occupancy`, {
       method: "PUT",
       body: JSON.stringify({ current_occupancy, status }),
@@ -73,10 +84,14 @@ export const api = {
 
   // Analytics & ML Predictions
   getAnalyticsSummary: () => fetchAPI("/analytics/summary"),
-  getRoomPrediction: (roomId: number, minutes = 30) => fetchAPI(`/predictions/room/${roomId}?minutes=${minutes}`),
-  getAllPredictions: (minutes = 30) => fetchAPI(`/predictions/all?minutes=${minutes}`),
+  getRoomPrediction: (roomId: number, minutes = 30) =>
+    fetchAPI(`/predictions/room/${roomId}?minutes=${minutes}`),
+  getAllPredictions: (minutes = 30) =>
+    fetchAPI(`/predictions/all?minutes=${minutes}`),
 
   // Navigation
   getRoute: (originBuildingId: number, destBuildingId: number) =>
-    fetchAPI(`/navigation/route?origin_building_id=${originBuildingId}&destination_building_id=${destBuildingId}`),
+    fetchAPI(
+      `/navigation/route?origin_building_id=${originBuildingId}&destination_building_id=${destBuildingId}`,
+    ),
 };
