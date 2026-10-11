@@ -1,6 +1,11 @@
 import { mockStore, calcCrowdLevel } from "./mockData";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+    ? "/api"
+    : "http://127.0.0.1:8000";
 
 // Fallback resolver for simulated live campus twin when backend is unreachable
 function resolveFallback(endpoint: string, options: RequestInit = {}) {
