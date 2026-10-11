@@ -2,6 +2,13 @@
 
 > A real-time IoT spatial telemetry, navigation, and AI crowd density forecasting platform built with Next.js 14, Tailwind CSS, FastAPI, and WebSocket synchronization.
 
+[![Vercel Deployment](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://frontend-eight-dun-83.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+🌐 **Live Production App**: **[https://frontend-eight-dun-83.vercel.app](https://frontend-eight-dun-83.vercel.app)**
+
 ---
 
 ## 🌟 Key Features
